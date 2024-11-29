@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: TestTokenValidationProject
+
+server:
+  port: 9999
+
+jwt:
+  auth:
+    converter:
+      resource-id: auth-client
+      principle-attribute: preferred_username

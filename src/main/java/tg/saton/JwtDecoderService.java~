@@ -1,0 +1,55 @@
+package tg.saton;
+
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.RSAKey;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.stereotype.Service;
+
+import java.security.interfaces.RSAPublicKey;
+
+@Service
+public class JwtDecoderService {
+
+    private final JwtKeyService jwtKeyService;
+
+    public JwtDecoderService(JwtKeyService jwtKeyService) {
+        this.jwtKeyService = jwtKeyService;
+    }
+
+    public Jwt decode(String token) throws Exception {
+        // Extraire le server-id du token
+        String serverId = extractServerIdFromToken(token);
+
+        // Récupérer le JWK Set pour ce server-id
+        String jwkSetJson = jwtKeyService.getJwkSet(serverId);
+
+        // Convertir le JWK Set JSON en un objet JWKSet
+        JWKSet jwkSet = parseJwkSet(jwkSetJson);
+
+        // Récupérer la première clé RSA du JWK Set
+        RSAKey rsaKey = (RSAKey) jwkSet.getKeys().get(0);  // Assurez-vous que c'est bien une clé RSA
+
+        // Convertir la clé RSA en RSAPublicKey
+        RSAPublicKey rsaPublicKey = rsaKey.toRSAPublicKey();
+
+        // Créer un JwtDecoder à partir de la clé publique RSA
+        JwtDecoder jwtDecoder = NimbusJwtDecoder.withPublicKey(rsaPublicKey).build();
+
+        // Décodez le token JWT
+        return jwtDecoder.decode(token);
+    }
+
+    private JWKSet parseJwkSet(String jwkSetJson) throws Exception {
+        // Utilisation d'ObjectMapper pour convertir le JSON en JWKSet
+        ObjectMapper objectMapper = new ObjectMapper();
+        return JWKSet.parse(jwkSetJson);
+    }
+
+    private String extractServerIdFromToken(String token) {
+        // Logique pour extraire le server-id du token
+        return JwtHelper.extractServerIdFromToken(token).getClaims().get("server-id").toString();
+    }
+}
