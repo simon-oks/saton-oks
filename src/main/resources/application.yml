@@ -10,3 +10,6 @@ jwt:
     converter:
       resource-id: auth-client
       principle-attribute: preferred_username
+
+utils:
+  central-base-url: http://192.168.1.67:10000/auth-central/api

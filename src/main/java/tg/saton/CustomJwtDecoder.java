@@ -3,6 +3,7 @@ package tg.saton;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.jwk.source.RemoteJWKSet;
 import com.nimbusds.jose.proc.SecurityContext;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
@@ -14,6 +15,9 @@ import java.net.URL;
 import java.util.Map;
 
 public class CustomJwtDecoder implements JwtDecoder {
+
+    @Value("${utils.central-base-url}")
+    private String centralBaseUrl;
 
     private final RestTemplate restTemplate;
 
@@ -33,7 +37,7 @@ public class CustomJwtDecoder implements JwtDecoder {
                 throw new JwtException("Le claim 'server-id' est manquant dans le JWT");
             }
 
-            // 3. Faire une requête à `http://localhost:10000/certs` pour obtenir l'URL JWKS
+            // 3. Faire une requête à l'api central pour obtenir l'URL du JWKS
             String jwksUrl = getJwksUrl(serverId);
 
             // 4. Construire un décodeur JWT basé sur cette URL
@@ -59,7 +63,7 @@ public class CustomJwtDecoder implements JwtDecoder {
 
     private String getJwksUrl(String serverId) {
         // Faire une requête GET à l'API pour récupérer l'URL du JWKS
-        String certsEndpoint = "http://localhost:10000/local-deployment/certs?server_id=" + serverId;
+        String certsEndpoint =  centralBaseUrl + "/jwks/url?server_id=" + serverId;
         String response = restTemplate.getForObject(certsEndpoint, String.class);
 
         if (response == null || response.isEmpty()) {
